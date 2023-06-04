@@ -1,7 +1,4 @@
 #include <Arduino.h>
-#ifndef WiFiClient
-#include <ESP8266WiFi.h>
-#endif
 #include <stdio.h>
 #include <interrupts.h>
 #include <SoftwareSerial.h>
@@ -9,22 +6,22 @@
 #include <LoRa_E32.h>
 #include "func.h"
 
-// #include <AsyncMqttClient.h>
+#ifndef WiFiClient
+#include <ESP8266WiFi.h>
+#endif
 
-// Lora Modul Pins SET
-#define GPIO_M0_LORA D1
-#define GPIO_M1_LORA D2
-#define INTERRUPT_PIN D5
-#define LORA_Tx D8
-#define LORA_Rx D7
-
-#define QoS 0
+#define GPIO_M0_LORA D1  // set lora m0 pin
+#define GPIO_M1_LORA D2  // set lora m1 pin
+#define GPIO_AUX_LORA D5 // set lora aux ping
+#define LORA_Tx D8       // set lora transmittng pin
+#define LORA_Rx D7       // set lora reciving ping
+#define QoS 0            // MQTT quality of service
 
 const char *topic = "dummyPub";
 
-// Funktion deklarations
+/* Funktion deklarations */
 void setupWiFi(const char *SSID, const char *password);
-void __handleInterrupt_UART_Rx();
+void __handleInterrupt_Rx_LoRa();
 void lora_Inspector(void);
 void lora_Set_Mode(uint8_t M0, uint8_t M1);
 void printParameters(struct Configuration configuration);
@@ -41,13 +38,16 @@ LoRa_E32 LORA_E32(&lora_TxRx);
 
 void setup()
 {
-  pinMode(GPIO_M0_LORA, HIGH);
-  pinMode(GPIO_M1_LORA, HIGH);
-  pinMode(INTERRUPT_PIN, HIGH);
+  // set always the pins M1 and M0 as output and AUX as Input
+  pinMode(GPIO_M0_LORA, OUTPUT);
+  pinMode(GPIO_M1_LORA, OUTPUT);
+  pinMode(GPIO_AUX_LORA, INPUT);
+  // Set E32 at Mode 3 (sleep mode M0=1 & M1=1)
+  lora_Set_Mode(HIGH, HIGH);
+  // Listinging to AUX pin wenn go low for reading data
+  attachInterrupt(digitalPinToInterrupt(GPIO_AUX_LORA), __handleInterrupt_Rx_LoRa, FALLING);
 
-  // pinMode(INTERRUPT_PIN, INPUT_PULLUP);
-  // attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), __handleInterrupt_UART_Rx, FALLING);
-  Serial.begin(1200);
+  Serial.begin(9600);
   delay(500);
   setupWiFi("OpenWrt", "12345678");
   MQTTMakeConnection();
@@ -55,6 +55,7 @@ void setup()
   delay(100);
   subTopic = subscribeTopic(topic);
   delay(200);
+
   LORA_E32.begin(); // Startup all pins and UART
   ResponseStructContainer res;
   res = LORA_E32.getConfiguration();
@@ -80,7 +81,7 @@ void loop()
   boolean ch = check(topic);
   printf("%d\n", ch);
 
-  delay(5000);
+  delay(2000);
 }
 
 void setupWiFi(const char *SSID, const char *password)
@@ -97,20 +98,21 @@ void setupWiFi(const char *SSID, const char *password)
   Serial.println(WiFi.localIP());
 }
 
-void __handleInterrupt_UART_Rx()
+void __handleInterrupt_Rx_LoRa()
 {
   while (lora_TxRx.available() > 0)
   {
-    printf("Data recived!\n");
+    printf("Data is received!\n");
 
     int msg = lora_TxRx.read();
     strcpy((char *)saveRxData, (char *)msg);
-    // Clear internal buff for new incomming bytes
-    lora_TxRx.flush();
   }
+
+  // Clear internal buff for new incomming bytes
+  lora_TxRx.flush();
 }
 
-void UART_Tx(uint16_t msg)
+void Tx_LoRa(uint16_t msg)
 {
   /*
   AUX = 1, user can input data less than 512 bytes continously withou overflow
@@ -118,7 +120,7 @@ void UART_Tx(uint16_t msg)
 
   */
 
-  if (digitalRead(INTERRUPT_PIN) == HIGH)
+  if (digitalRead(GPIO_AUX_LORA) == HIGH)
   {
 
     lora_TxRx.write(msg);
