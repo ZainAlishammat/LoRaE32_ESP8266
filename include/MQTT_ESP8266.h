@@ -1,7 +1,10 @@
+#include <PubSubClient.h>
+#include <ESP8266WiFi.h>
+#include <stdio.h>
+
 void setupWiFi(const char *SSID, const char *password);
 void MQTTMakeConnection();
 void stayAwake();
-void callback_Set(void);
 boolean publishMsg(const char *topic, const char *payload);
 boolean publishNum(const char *topic, const uint8_t *payload, unsigned int length);
 boolean subscribeTopic(const char *topic);

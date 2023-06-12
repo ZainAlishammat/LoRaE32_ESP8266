@@ -1,3 +1,6 @@
+#include <Arduino.h>
+#include <LoRa_E32.h>
+
 void loraPinModeSetup(void);
 void loraConfigSet(void);
 // void __handleInterrupt_Rx_LoRa();

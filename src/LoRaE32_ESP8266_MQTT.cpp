@@ -1,49 +1,44 @@
+#include "LoRaE32_ESP8266_MQTT.h"
 
-#include <Arduino.h>
-#include <LoRa_E32.h>
-#include <SoftwareSerial.h>
-
-#define GPIO_M0_LORA D1  // set lora m0 pin
-#define GPIO_M1_LORA D2  // set lora m1 pin
-#define GPIO_AUX_LORA D5 // set lora aux ping
 #define LORA_Tx D8       // set lora transmittng pin
 #define LORA_Rx D7       // set lora reciving ping
+byte GPIO_M0_LORA = D1;  // set lora m0 pin
+byte GPIO_M1_LORA = D2;  // set lora m1 pin
+byte GPIO_AUX_LORA = D5; // set lora aux ping
 
 void printParameters(struct Configuration configuration);
 
 // Instances
 SoftwareSerial lora_TxRx(LORA_Rx, LORA_Tx); /* UART Swaping*/
-LoRa_E32 LORA_E32(&lora_TxRx);
+LoRa_E32 LORA_E32(&lora_TxRx, GPIO_AUX_LORA, GPIO_M0_LORA, GPIO_M1_LORA);
 
+/*set the pinMode M0, M2 as output and AUX as input*/
 void loraPinModeSetup(void)
 {
-    // set always the pins M1 and M0 as output and AUX as Input
-    pinMode(GPIO_M0_LORA, OUTPUT);
-    pinMode(GPIO_M1_LORA, OUTPUT);
-    pinMode(GPIO_AUX_LORA, INPUT);
+    pinMode((uint8_t)GPIO_M0_LORA, OUTPUT);
+    pinMode((uint8_t)GPIO_M1_LORA, OUTPUT);
+    pinMode((uint8_t)GPIO_AUX_LORA, INPUT);
 }
 
 void loraConfigSet(void)
 {
-    lora_TxRx.begin(9600);
-    LORA_E32.begin(); // Startup all pins and UART
+    loraPinModeSetup();
+    lora_TxRx.begin(9600); // set up a serial connection with LoRa E32 over UART
+    LORA_E32.begin();      // Startup all pins and UART
     ResponseStructContainer response = LORA_E32.getConfiguration();
-    Configuration moduleConfig = *(Configuration *)response.data; // Get configuration pointer before all other operation
-    // moduleConfig.ADDL = 0x01;
-    // moduleConfig.ADDH = 0x00;
-    // moduleConfig.CHAN = 0x00;
-    moduleConfig.OPTION.transmissionPower = POWER_27;
-    moduleConfig.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS;
-    moduleConfig.OPTION.wirelessWakeupTime = WAKE_UP_500;
-    moduleConfig.SPED.uartParity = MODE_00_8N1;
-    moduleConfig.SPED.uartBaudRate = UART_BPS_9600;
-    moduleConfig.SPED.airDataRate = AIR_DATA_RATE_101_192;
-    moduleConfig.OPTION.fixedTransmission = FT_FIXED_TRANSMISSION;
-    LORA_E32.setConfiguration(moduleConfig, WRITE_CFG_PWR_DWN_SAVE);
+    Configuration moduleConfig = *(Configuration *)response.data;    // Get configuration pointer before all other operation
+    moduleConfig.OPTION.transmissionPower = POWER_27;                // transmission power at 27 dBm
+    moduleConfig.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS; // UART pins as push pull
+    moduleConfig.OPTION.wirelessWakeupTime = WAKE_UP_500;            // wakeup time at 500 ms
+    moduleConfig.SPED.uartParity = MODE_00_8N1;                      // UART 8N1
+    moduleConfig.SPED.uartBaudRate = UART_BPS_9600;                  // UART baudrate at 9600
+    moduleConfig.SPED.airDataRate = AIR_DATA_RATE_101_192;           // ait data rate at 19,2k pps
+    moduleConfig.OPTION.fixedTransmission = FT_FIXED_TRANSMISSION;   // fixed transmission mode enable
+    LORA_E32.setConfiguration(moduleConfig, WRITE_CFG_PWR_DWN_SAVE); // save the configuration after module reset
     Serial.println(response.status.getResponseDescription());
     Serial.println(response.status.code);
-    printParameters(moduleConfig);
-    response.close();
+    printParameters(moduleConfig); // print module parameters after setting
+    response.close();              // don't display the parameter anymore (Just one time)
 }
 
 // void __handleInterrupt_Rx_LoRa()
@@ -60,8 +55,9 @@ void loraConfigSet(void)
 //     // Clear internal buff for new incomming bytes
 //     lora_TxRx.flush();
 // }
-// Listinging to AUX pin wenn go low for reading data
-// attachInterrupt(digitalPinToInterrupt(GPIO_AUX_LORA), __handleInterrupt_Rx_LoRa, FALLING);
+
+/* Listinging to AUX pin wenn go low for reading data
+ attachInterrupt(digitalPinToInterrupt(GPIO_AUX_LORA), __handleInterrupt_Rx_LoRa, FALLING);*/
 
 void Tx_LoRa(uint16_t msg)
 {
@@ -82,8 +78,18 @@ void Tx_LoRa(uint16_t msg)
     }
 }
 
+/*configuring the lora_e32 mode over M0 and M2 pin_state
+    Mode 0: M0 & M1 = LOW (Normal mode)
+    Mode 1: M0 = HIGH & M1 = LOW (Wake up mode)
+    Mode 2: M0 = LOW & M1 = HIGH (Power saving mode)
+    Mode 3: M0 = HIGH & M1 = LOW (Sleep mode)
+
+
+*/
+
 void lora_Set_Mode(uint8_t M0, uint8_t M1)
 {
+    // LoRa_E32.setMode();
     digitalWrite(GPIO_M0_LORA, M0);
     digitalWrite(GPIO_M1_LORA, M1);
 }

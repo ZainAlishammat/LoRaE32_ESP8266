@@ -1,34 +1,23 @@
-
-#include <Arduino.h>
-#include <stdio.h>
-#include "func.h"
-#include "loraE32.h"
-
-#define QoS 0 // MQTT quality of service
+#include "MQTT_ESP8266.h"
+#include "LoRaE32_ESP8266_MQTT.h"
 
 const char *topic = "dummyPub";
 
-char reciveMsg;
-boolean subTopic;
-
 void setup()
 {
-  // Set E32 at Mode 3 (sleep mode M0=1 & M1=1)
-  loraPinModeSetup();
-  lora_Set_Mode(HIGH, HIGH);
+
+  lora_Set_Mode(HIGH, HIGH); // Set E32 at Mode 3 (sleep mode M0=1 & M1=1)
   Serial.begin(9600);
   delay(500);
-  setupWiFi("OpenWrt", "12345678");
-  MQTTMakeConnection();
-  subTopic = subscribeTopic(topic);
+  setupWiFi("OpenWrt", "12345678"); // establish a wifi connection
+  MQTTMakeConnection();             // build a mqtt connnection with the mqtt broker
+  subscribeTopic(topic);
   delay(1000);
-
   loraConfigSet();
 }
 void loop()
 {
-  stayAwake(); // Maintaining regularly connection to the server for incoming messages
-  check(topic);
-
+  stayAwake();  // Maintaining regularly connection to the server for incoming messages
+  check(topic); // reconnect with the MQTT Broker, if the connection is broken or lost
   delay(1000);
 }
