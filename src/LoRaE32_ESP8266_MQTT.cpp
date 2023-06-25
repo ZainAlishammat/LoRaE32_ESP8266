@@ -90,8 +90,8 @@ void Tx_LoRa(uint16_t msg)
 void lora_Set_Mode(uint8_t M0, uint8_t M1)
 {
     // LoRa_E32.setMode();
-    digitalWrite(GPIO_M0_LORA, M0);
-    digitalWrite(GPIO_M1_LORA, M1);
+    digitalWrite((uint8_t)GPIO_M0_LORA, M0);
+    digitalWrite((uint8_t)GPIO_M1_LORA, M1);
 }
 
 void lora_Inspector(void)

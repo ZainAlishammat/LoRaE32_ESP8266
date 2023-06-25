@@ -5,12 +5,11 @@ const char *topic = "dummyPub";
 
 void setup()
 {
-
-  lora_Set_Mode(HIGH, HIGH); // Set E32 at Mode 3 (sleep mode M0=1 & M1=1)
-  Serial.begin(9600);
-  delay(500);
   setupWiFi("OpenWrt", "12345678"); // establish a wifi connection
   MQTTMakeConnection();             // build a mqtt connnection with the mqtt broker
+  lora_Set_Mode(HIGH, HIGH);        // Set E32 at Mode 3 (sleep mode M0=1 & M1=1)
+  Serial.begin(9600);
+  delay(500);
   subscribeTopic(topic);
   delay(1000);
   loraConfigSet();
