@@ -19,7 +19,12 @@ void __subCallback(char *topic, byte *payload, unsigned int length)
     printf("\r\n");
 }
 
-/*Set WiFi connection with the broker*/
+/*
+Set WiFi connection with the broker
+*@param SSID: The wifi network name
+*@param password: The wifi passowrd
+*@param wifimodd: The desired wifi mode. It can be of the following: WIFI_OFF, WIFI_STA, WIFI_AP, WIFI_AP_STA
+*/
 void setupWiFi(const char *SSID, const char *password, WiFiMode wifimode)
 {
 
@@ -42,15 +47,19 @@ void setupWiFi(const char *SSID, const char *password, WiFiMode wifimode)
     }
 }
 
-/*maintaining a connection with the mqtt broker*/
+/*
+Maintaining a connection with the mqtt broker
+*/
 boolean MQTT_stayAwake(void)
 {
     boolean loopCheck = P_S_CLIENT.loop();
     return loopCheck;
 }
 
-/*build a connection with the mqtt broker*/
-void MQTTMakeConnection()
+/*
+Build a connection with the mqtt broker
+*/
+void MQTTMakeConnection(void)
 {
     setupWiFi(mqtt_cs.WIFI_SSID, mqtt_cs.WIFI_PASSWORD, mqtt_cs.wifiSetMode);
     P_S_CLIENT.setServer(mqtt_cs.MQTT_IPAddresse, MQTT_PortServer); // set server connection with mqtt broker
@@ -58,11 +67,12 @@ void MQTTMakeConnection()
     P_S_CLIENT.setCallback(__subCallback);
 }
 
-/*functoin for publishing massages
-user has to enter  the topic and payload
-Ther state of the publishing is gonna be returned
+/*
+Publish a massage
+*@param topic
+*@param payload
 */
-boolean publishMsg(const char *topic, const char *payload)
+boolean publisheMsg(const char *topic, const char *payload)
 {
     boolean connected = P_S_CLIENT.connected();
     boolean published = false;
@@ -79,30 +89,11 @@ boolean publishMsg(const char *topic, const char *payload)
     return published;
 }
 
-/*functoin for publishing numbers
-user has to enter  the topic and payload and the length of the payload
-Ther state of the publishing is gonna be returned
+/*
+Subscribe a topic
+*@param topics: an array of topcis
+*@param size: the size of the array of topcis
 */
-boolean publishNum(const char *topic, const uint8_t *payload, unsigned int length)
-{
-    boolean connected = P_S_CLIENT.connected();
-    boolean published = false;
-    if (connected) // check if there is a connection the the mqtt broker
-    {
-        published = P_S_CLIENT.publish(topic, payload, length);
-        delay(1000);
-        return published;
-    }
-    else
-    {
-        printf("There is no connection with the MQTT Broker!\n");
-    }
-    return published;
-}
-
-/*functoin for subscribing purposes
-The user has to put the topic to be subscribed
-The state of the subscribing is gonna be returned*/
 boolean subscribeTopic(const char *topics[], uint8_t size)
 {
     boolean connected = P_S_CLIENT.connected();
@@ -125,8 +116,10 @@ boolean subscribeTopic(const char *topics[], uint8_t size)
     return subscried;
 }
 
-/* function for unsubscribing purposes
-The user has to input the topic to be unsubscribed*/
+/*
+Unsubscribe to a topic
+*@param topic
+*/
 boolean unsubscribeTopic(const char *topic)
 {
     boolean connected = P_S_CLIENT.connected();
@@ -144,7 +137,11 @@ boolean unsubscribeTopic(const char *topic)
     return unsubscribed;
 }
 
-/*keeping a regular connection with the broker und regular subscription*/
+/*
+Keeping a regular connection with the broker und regular subscription
+*@param topics: An array of the topics to be subsscribed
+*@param size: The size of the array of topics
+*/
 void MQTT_check(const char *topics[], uint8_t size)
 {
     boolean connected = P_S_CLIENT.connected();
