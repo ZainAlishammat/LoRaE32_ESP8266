@@ -6,14 +6,12 @@ LoRa_E32_Config_Pin loraConfigPin;
 SoftwareSerial lora_TxRx(loraConfigPin.LORA_Rx, loraConfigPin.LORA_Tx); /* UART Swaping*/
 LoRa_E32 LORA_E32(&lora_TxRx, loraConfigPin.GPIO_AUX_LORA, loraConfigPin.GPIO_M0_LORA, loraConfigPin.GPIO_M1_LORA, UART_BPS_RATE_9600);
 
-void printParameters(struct Configuration configuration);
-
 /*set the pinMode M0, M2 as output and AUX as input*/
 void loraPinModeSetup(void)
 {
-    pinMode((uint8_t)loraConfigPin.GPIO_M0_LORA, OUTPUT);
-    pinMode((uint8_t)loraConfigPin.GPIO_M1_LORA, OUTPUT);
-    pinMode((uint8_t)loraConfigPin.GPIO_AUX_LORA, INPUT);
+    pinMode(loraConfigPin.GPIO_M0_LORA, OUTPUT);
+    pinMode(loraConfigPin.GPIO_M1_LORA, OUTPUT);
+    pinMode(loraConfigPin.GPIO_AUX_LORA, INPUT);
 }
 
 void loraConfigSet(void)

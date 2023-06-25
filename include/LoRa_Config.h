@@ -22,16 +22,16 @@ typedef struct {
     byte WIRELESS_WAKE_UP_TIME= 0b001;
     byte FEC_SWITCH= 0b1;
     byte TRANSISSION_POWER= 0b01;
-    PROGRAM_COMMAND PARAMETER_WITH_POWER_RESET = (PROGRAM_COMMAND)SAVE_PWR_DOWN;
+    PROGRAM_COMMAND PARAMETER_WITH_POWER_RESET = WRITE_CFG_PWR_DWN_SAVE; // SAVE THE PARAMETERS AFTER RESET
 
 }LoRa_E32_Config_Parameter;
 
 
 typedef struct {
-    byte LORA_Tx = D8;       // ESP8266 transmittng pin
-    byte LORA_Rx = D7;       // ESP8266 reciving ping
-    byte GPIO_M0_LORA = D1;  // ESP8266 m0 pin
-    byte GPIO_M1_LORA = D2;  // ESP8266 m1 pin
-    byte GPIO_AUX_LORA = D5; // ESP8266 aux ping
+    uint8_t LORA_Tx = D8;       // ESP8266 transmittng pin
+    uint8_t LORA_Rx = D7;       // ESP8266 reciving ping
+    uint8_t GPIO_M0_LORA = D1;  // ESP8266 m0 pin
+    uint8_t GPIO_M1_LORA = D2;  // ESP8266 m1 pin
+    uint8_t GPIO_AUX_LORA = D5; // ESP8266 aux ping
 
 }LoRa_E32_Config_Pin;
