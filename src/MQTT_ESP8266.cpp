@@ -1,17 +1,11 @@
 #include "MQTT_ESP8266.h"
+#include "MQTT_Config.h"
 
-#define MQTT_PortServer 1883 // MQTT port number
-#define QoS 0                // MQTT quality of service
-
-const char *Client_ID = "Zeus";                 // enter a client id for MQTT connnection with the Broker
-uint8_t MQTT_IPAddresse[] = {192, 168, 1, 178}; // enter the MQTT broker IP addresse
-// IPAddress MQTT_IPServer(192, 168, 1, 178);     // enter the ip addresse of the mqtt broker
-
-uint8_t MAC_Addresse[6]; // the mac addrese of the esp8266 module
-boolean c_ID;
-
+MQTT_CONFIG_STRUCT mqtt_cs;          // make a configuration instanse for setting wifi and mqtt connection requirements
 WiFiClient ESP_CLIENT;               // set up a WiFiClient instance for wifi conncetion with the broker
 PubSubClient P_S_CLIENT(ESP_CLIENT); // make a PubSubClient instance for mqtt setting
+
+boolean c_ID;
 
 /* MQTT callback function for subscription purposes*/
 void __subCallback(char *topic, byte *payload, unsigned int length)
@@ -26,31 +20,41 @@ void __subCallback(char *topic, byte *payload, unsigned int length)
 }
 
 /*Set WiFi connection with the broker*/
-void setupWiFi(const char *SSID, const char *password)
+void setupWiFi(const char *SSID, const char *password, WiFiMode wifimode)
 {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(SSID, password); // ssid and password of the wifi netzwerk
-    printf("Attempt to connect to %s", SSID);
-    while (WiFi.status() != WL_CONNECTED) // check wifi connection
+
+    boolean mode = WiFi.mode(wifimode);
+    if (mode)
     {
-        delay(500);
-        Serial.print(".");
+        WiFi.begin(SSID, password); // ssid and password of the wifi netzwerk
+        printf("Attempt to connect to %s", SSID);
+        while (WiFi.status() != WL_CONNECTED) // attempting wifi connection
+        {
+            delay(500);
+            printf(".");
+        }
+        printf("Connection with %s%s\r\n", SSID, " is done!");
+        Serial.println(WiFi.localIP());
     }
-    printf("Connection with %s%s\r\n", SSID, " is done!");
-    Serial.println(WiFi.localIP());
+    else
+    {
+        printf("Setting mode is failed!\n");
+    }
 }
 
 /*maintaining a connection with the mqtt broker*/
-void stayAwake()
+boolean MQTT_stayAwake(void)
 {
-    P_S_CLIENT.loop();
+    boolean loopCheck = P_S_CLIENT.loop();
+    return loopCheck;
 }
 
 /*build a connection with the mqtt broker*/
 void MQTTMakeConnection()
 {
-    P_S_CLIENT.setServer(MQTT_IPAddresse, MQTT_PortServer); // set server connection with mqtt broker
-    c_ID = P_S_CLIENT.connect(Client_ID);                   // creat a client id in the mqtt broker
+    setupWiFi(mqtt_cs.WIFI_SSID, mqtt_cs.WIFI_PASSWORD, mqtt_cs.wifiSetMode);
+    P_S_CLIENT.setServer(mqtt_cs.MQTT_IPAddresse, MQTT_PortServer); // set server connection with mqtt broker
+    c_ID = P_S_CLIENT.connect(mqtt_cs.MQTT_CLIENT_ID);              // creat a client id in the mqtt broker
     P_S_CLIENT.setCallback(__subCallback);
 }
 
@@ -60,11 +64,17 @@ Ther state of the publishing is gonna be returned
 */
 boolean publishMsg(const char *topic, const char *payload)
 {
+    boolean connected = P_S_CLIENT.connected();
     boolean published = false;
-    if (P_S_CLIENT.connected()) // check if there is a connection the the mqtt broker
+    if (connected) // check if there is a connection the the mqtt broker
     {
         published = P_S_CLIENT.publish(topic, payload);
+        delay(1000);
         return published;
+    }
+    else
+    {
+        printf("There is no connection with the MQTT Broker!\n");
     }
     return published;
 }
@@ -75,11 +85,17 @@ Ther state of the publishing is gonna be returned
 */
 boolean publishNum(const char *topic, const uint8_t *payload, unsigned int length)
 {
+    boolean connected = P_S_CLIENT.connected();
     boolean published = false;
-    if (P_S_CLIENT.connected()) // check if there is a connection the the mqtt broker
+    if (connected) // check if there is a connection the the mqtt broker
     {
         published = P_S_CLIENT.publish(topic, payload, length);
+        delay(1000);
         return published;
+    }
+    else
+    {
+        printf("There is no connection with the MQTT Broker!\n");
     }
     return published;
 }
@@ -87,18 +103,24 @@ boolean publishNum(const char *topic, const uint8_t *payload, unsigned int lengt
 /*functoin for subscribing purposes
 The user has to put the topic to be subscribed
 The state of the subscribing is gonna be returned*/
-boolean subscribeTopic(const char *topic)
+boolean subscribeTopic(const char *topics[], uint8_t size)
 {
+    boolean connected = P_S_CLIENT.connected();
     boolean subscried = false;
 
-    printf("Trying to connect with the MQTT Broker\n");
-
-    if (P_S_CLIENT.connected()) // check if there is a connection the the mqtt broker
+    if (connected) // check if there is a connection the the mqtt broker
     {
         printf("connected\n");
-        subscried = P_S_CLIENT.subscribe(topic);
-        printf("Subscribing the topic %s%s\n", topic, " was successfully");
+        for (uint8_t i = 0; i < size; i++)
+        {
+            subscried = P_S_CLIENT.subscribe(topics[i]);
+            delay(2000);
+        }
         return subscried;
+    }
+    else
+    {
+        printf("There is no connection with the MQTT Broker!\n");
     }
     return subscried;
 }
@@ -107,44 +129,42 @@ boolean subscribeTopic(const char *topic)
 The user has to input the topic to be unsubscribed*/
 boolean unsubscribeTopic(const char *topic)
 {
-
+    boolean connected = P_S_CLIENT.connected();
     boolean unsubscribed = false;
-    if (P_S_CLIENT.connected()) // check if there is a connection the the mqtt broker
+    if (connected) // check if there is a connection the the mqtt broker
     {
         unsubscribed = P_S_CLIENT.unsubscribe(topic);
-        printf("Unsubscribing the topic %s%s\n", topic, " was successfully");
+        delay(1000);
         return unsubscribed;
+    }
+    else
+    {
+        printf("There is no connection with the MQTT Broker!\n");
     }
     return unsubscribed;
 }
 
-/*reconnect to the mqtt server if the connection is broken of failed*/
-void reconnect(const char *topic)
-{
-    printf("Attempting MQTT connection...\n");
-
-    while (!P_S_CLIENT.connected()) // stay hanging wihle there is no connection wiht the mqtt broker
-    {
-        if (P_S_CLIENT.connect(Client_ID)) // if there is a connection, check if the client id is accepted
-        {
-            subscribeTopic(topic); // subscribe th the topic again
-        }
-        else
-        {
-            Serial.print("failed to reconnet. ");
-            Serial.println(P_S_CLIENT.state());
-            printf("try again in 5 seconds/n");
-            // Wait 5 seconds before retrying
-            delay(5000);
-        }
-    }
-}
-
 /*keeping a regular connection with the broker und regular subscription*/
-void check(const char *topic)
+void MQTT_check(const char *topics[], uint8_t size)
 {
-    if (!P_S_CLIENT.connected())
+    boolean connected = P_S_CLIENT.connected();
+    if (!connected)
     {
-        reconnect(topic);
+        printf("Attempt to make a MQTT connection...\n");
+        while (!connected) // stay hanging wihle there is no connection wiht the mqtt broker
+        {
+            c_ID = P_S_CLIENT.connect(mqtt_cs.MQTT_CLIENT_ID); // if there is a connection, check if the client id is accepted
+            if (c_ID)
+            {
+
+                subscribeTopic(topics, size); // subscribe th the topic again
+            }
+            else
+            {
+                printf("failed to reconnet: Cleint ID isn't accepted!\n");
+                printf("try again in 3 seconds\n");
+                delay(3000);
+            }
+        }
     }
 }

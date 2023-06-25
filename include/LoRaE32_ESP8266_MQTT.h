@@ -1,12 +1,16 @@
 #include <Arduino.h>
-#include <LoRa_E32.h>
+#include "LoRa_Config.h"
+#include "recievedData.h"
+
+
 
 void loraPinModeSetup(void);
 void loraConfigSet(void);
-// void __handleInterrupt_Rx_LoRa();
-void lora_Inspector(void);
-void lora_Set_Mode(uint8_t M0, uint8_t M1);
+boolean lora_Set_Mode(MODE_TYPE mode);
+boolean LoRa_sendMsg(const char *msg, const uint8_t size);
+boolean LoRa_recieveMsg(receivedDataStruct rd);
 void printParameters(struct Configuration configuration);
+
 
 
 
