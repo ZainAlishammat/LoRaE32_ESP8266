@@ -8,10 +8,13 @@ receivedDataStruct RD_;
 
 void setup()
 {
+  Serial.begin(115200);
+
+  printf("1\n");
   MQTTMakeConnection(); // build a mqtt connnection with the mqtt broker
-  Serial.begin(9600);
+
   delay(500);
-  subscribeTopic(MQTT_TOPICS, topicsSize);
+  // subscribeTopic(MQTT_TOPICS, topicsSize);
 
   /* Set LoRa E32 mode
       MODE_0_NORMAL
@@ -21,10 +24,11 @@ void setup()
   */
   lora_Set_Mode(MODE_3_SLEEP);
   loraConfigSet();
-  LoRa_recieveMsg(RD_);
+  // LoRa_recieveMsg(RD_);
 }
 void loop()
 {
+  printf("1\n");
   MQTT_stayAwake();                    // Maintaining regularly connection to the server for incoming messages
   MQTT_check(MQTT_TOPICS, topicsSize); // reconnect with the MQTT Broker, if the connection is broken or lost
   delay(1000);

@@ -27,18 +27,18 @@ Set WiFi connection with the broker
 */
 void setupWiFi(const char *SSID, const char *password, WiFiMode wifimode)
 {
+    printf("Attempt to connect to %s\n ", SSID);
 
     boolean mode = WiFi.mode(wifimode);
     if (mode)
     {
-        WiFi.begin(SSID, password); // ssid and password of the wifi netzwerk
-        printf("Attempt to connect to %s", SSID);
+        WiFi.begin(SSID, password);           // ssid and password of the wifi netzwerk
         while (WiFi.status() != WL_CONNECTED) // attempting wifi connection
         {
             delay(500);
             printf(".");
         }
-        printf("Connection with %s%s\r\n", SSID, " is done!");
+        printf("Connection with %s%s\n", SSID, " is done!");
         Serial.println(WiFi.localIP());
     }
     else

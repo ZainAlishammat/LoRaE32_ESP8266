@@ -51,7 +51,7 @@ boolean lora_Set_Mode(MODE_TYPE mode)
     modeStatus = LORA_E32.setMode(mode);
     if (modeStatus == E32_SUCCESS)
     {
-        printf("The mode %d%s\n", mode, "has been set seccessfully");
+        printf("The mode %d%s\n", mode, " has been set seccessfully");
         return true;
     }
     else
