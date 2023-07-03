@@ -10,8 +10,6 @@ enum PARAMETER_MODE_POWER_RESET
   NO_SAVE_PWR_DOWN      = 0xC2
 };
 
-
-
  struct LoRa_E32_Config_Parameter{
 
   LoRa_E32_Config_Parameter(){
@@ -58,11 +56,11 @@ enum PARAMETER_MODE_POWER_RESET
         GPIO_M1_LORA = D2;
         GPIO_AUX_LORA = D5;
     }
-    uint8_t LORA_Tx;       // ESP8266 transmitting pin
-    uint8_t LORA_Rx;       // ESP8266 receiving pin
-    uint8_t GPIO_M0_LORA;  // ESP8266 m0 pin
-    uint8_t GPIO_M1_LORA;  // ESP8266 m1 pin
-    uint8_t GPIO_AUX_LORA; // ESP8266 aux pin
+    byte LORA_Tx;       // ESP8266 transmitting pin
+    byte LORA_Rx;       // ESP8266 receiving pin
+    byte GPIO_M0_LORA;  // ESP8266 m0 pin
+    byte GPIO_M1_LORA;  // ESP8266 m1 pin
+    byte GPIO_AUX_LORA; // ESP8266 aux pin
 
 };
 

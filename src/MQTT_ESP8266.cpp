@@ -149,13 +149,14 @@ Keeping a regular connection with the broker und regular subscription
 */
 void MQTT_check(const char *topics[], uint8_t size)
 {
+
     boolean connected = P_S_CLIENT.connected();
     if (!connected)
     {
         printf("Attempt to make a MQTT connection...\n");
         while (!connected) // stay hanging wihle there is no connection wiht the mqtt broker
         {
-            c_ID = P_S_CLIENT.connect(mqtt_cs.MQTT_CLIENT_ID); // if there is a connection, check if the client id is accepted
+            // if there is a connection, check if the client id is accepted
             if (c_ID)
             {
 

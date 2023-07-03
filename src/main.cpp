@@ -27,6 +27,6 @@ void loop()
   publisheMsg(topicName, publishTopic, sizeT, true);
   MQTT_stayAwake();                    // Maintaining regularly connection to the server for incoming messages
   MQTT_check(MQTT_TOPICS, topicsSize); // reconnect with the MQTT Broker, if the connection is broken or lost
-  Serial.println(RD_.rc_Data);
+  // Serial.println(RD_.rc_Data);
   delay(1000);
 }

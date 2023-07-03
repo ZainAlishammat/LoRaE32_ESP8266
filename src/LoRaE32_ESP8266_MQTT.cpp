@@ -4,7 +4,7 @@
 LoRa_E32_Config_Parameter loraConfigPar;
 LoRa_E32_Config_Pin loraConfigPin;
 SoftwareSerial lora_TxRx(loraConfigPin.LORA_Rx, loraConfigPin.LORA_Tx); /* UART Swaping*/
-LoRa_E32 LORA_E32(&lora_TxRx, loraConfigPin.GPIO_AUX_LORA, loraConfigPin.GPIO_M0_LORA, loraConfigPin.GPIO_M1_LORA, UART_BPS_RATE_9600);
+LoRa_E32 LORA_E32(&lora_TxRx, loraConfigPin.GPIO_AUX_LORA, loraConfigPin.GPIO_M0_LORA, loraConfigPin.GPIO_M1_LORA);
 
 /*set the pinMode M0, M2 as output and AUX as input*/
 void loraPinModeSetup(void)
@@ -17,12 +17,11 @@ void loraPinModeSetup(void)
 void loraConfigSet(void)
 {
     loraPinModeSetup();
+    LORA_E32.begin(); // Startup all pins and UART
 
     MODE_TYPE mode = LORA_E32.getMode();
     if (mode == MODE_3_SLEEP)
     {
-
-        LORA_E32.begin(); // Startup all pins and UART
         ResponseStructContainer response = LORA_E32.getConfiguration();
         Configuration moduleConfig = *(Configuration *)response.data;                          // Get configuration pointer before all other operation
         moduleConfig.ADDL = loraConfigPar.LORA_E32_ADDL;                                       // Modul low address
