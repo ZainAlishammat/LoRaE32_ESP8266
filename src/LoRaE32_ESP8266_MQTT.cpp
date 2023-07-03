@@ -17,24 +17,30 @@ void loraPinModeSetup(void)
 void loraConfigSet(void)
 {
     loraPinModeSetup();
-    LORA_E32.begin(); // Startup all pins and UART
-    ResponseStructContainer response = LORA_E32.getConfiguration();
-    Configuration moduleConfig = *(Configuration *)response.data;                          // Get configuration pointer before all other operation
-    moduleConfig.ADDL = loraConfigPar.LORA_E32_ADDL;                                       // Modul low address
-    moduleConfig.ADDH = loraConfigPar.LORA_E32_ADDH;                                       // Modul high address
-    moduleConfig.CHAN = loraConfigPar.LORA_E32_CHAN;                                       // Modul channel
-    moduleConfig.OPTION.transmissionPower = loraConfigPar.TRANSISSION_POWER;               // transmission power at 27 dBm
-    moduleConfig.OPTION.ioDriveMode = loraConfigPar.IO_DRIVE_MODE;                         // UART pins as push pull
-    moduleConfig.OPTION.wirelessWakeupTime = loraConfigPar.WIRELESS_WAKE_UP_TIME;          // wakeup time at 500 ms
-    moduleConfig.SPED.uartParity = loraConfigPar.UART_PARITY;                              // UART 8N1
-    moduleConfig.SPED.uartBaudRate = loraConfigPar.UAR_BAUD_DATA_RATE;                     // UART baudrate at 9600
-    moduleConfig.SPED.airDataRate = loraConfigPar.AIR_DATA_RATE;                           // ait data rate at 19,2k pps
-    moduleConfig.OPTION.fixedTransmission = loraConfigPar.FIXED_TRANSMISSION_ENABLING_BIT; // fixed transmission mode enable
-    LORA_E32.setConfiguration(moduleConfig, loraConfigPar.PARAMETER_WITH_POWER_RESET);     // save the configuration after module reset
-    Serial.println(response.status.getResponseDescription());
-    Serial.println(response.status.code);
-    printParameters(moduleConfig); // print module parameters after setting
-    response.close();              // don't display the parameter anymore (Just one time)
+
+    MODE_TYPE mode = LORA_E32.getMode();
+    if (mode == MODE_3_SLEEP)
+    {
+
+        LORA_E32.begin(); // Startup all pins and UART
+        ResponseStructContainer response = LORA_E32.getConfiguration();
+        Configuration moduleConfig = *(Configuration *)response.data;                          // Get configuration pointer before all other operation
+        moduleConfig.ADDL = loraConfigPar.LORA_E32_ADDL;                                       // Modul low address
+        moduleConfig.ADDH = loraConfigPar.LORA_E32_ADDH;                                       // Modul high address
+        moduleConfig.CHAN = loraConfigPar.LORA_E32_CHAN;                                       // Modul channel
+        moduleConfig.OPTION.transmissionPower = loraConfigPar.TRANSISSION_POWER;               // transmission power at 27 dBm
+        moduleConfig.OPTION.ioDriveMode = loraConfigPar.IO_DRIVE_MODE;                         // UART pins as push pull
+        moduleConfig.OPTION.wirelessWakeupTime = loraConfigPar.WIRELESS_WAKE_UP_TIME;          // wakeup time at 500 ms
+        moduleConfig.SPED.uartParity = loraConfigPar.UART_PARITY;                              // UART 8N1
+        moduleConfig.SPED.uartBaudRate = loraConfigPar.UAR_BAUD_DATA_RATE;                     // UART baudrate at 9600
+        moduleConfig.SPED.airDataRate = loraConfigPar.AIR_DATA_RATE;                           // ait data rate at 19,2k pps
+        moduleConfig.OPTION.fixedTransmission = loraConfigPar.FIXED_TRANSMISSION_ENABLING_BIT; // fixed transmission mode enable
+        LORA_E32.setConfiguration(moduleConfig, loraConfigPar.PARAMETER_WITH_POWER_RESET);     // save the configuration after module reset
+        Serial.println(response.status.getResponseDescription());
+        Serial.println(response.status.code);
+        printParameters(moduleConfig); // print module parameters after setting
+        response.close();              // don't display the parameter anymore (Just one time)
+    }
 }
 
 /* Configuring the lora_e32 mode over M0 and M2 pin_state
@@ -47,6 +53,7 @@ void loraConfigSet(void)
 
 boolean lora_Set_Mode(MODE_TYPE mode)
 {
+
     Status modeStatus;
     modeStatus = LORA_E32.setMode(mode);
     if (modeStatus == E32_SUCCESS)

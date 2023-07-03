@@ -65,6 +65,7 @@ void MQTTMakeConnection(void)
     P_S_CLIENT.setServer(mqtt_cs.MQTT_IPAddresse, MQTT_PortServer); // set server connection with mqtt broker
     c_ID = P_S_CLIENT.connect(mqtt_cs.MQTT_CLIENT_ID);              // creat a client id in the mqtt broker
     P_S_CLIENT.setCallback(__subCallback);
+    P_S_CLIENT.setBufferSize(MQTT_MAX_PACKET_SIZE); // Set the max size of the buffer for the transceiver
 }
 
 /*
@@ -72,19 +73,23 @@ Publish a massage
 *@param topic
 *@param payload
 */
-boolean publisheMsg(const char *topic, const char *payload)
+boolean publisheMsg(const char *topic, const char payload[], const uint8_t p_len, boolean is_retaind)
 {
+    uint16_t checkBufferSize = P_S_CLIENT.getBufferSize();
     boolean connected = P_S_CLIENT.connected();
     boolean published = false;
+    if (checkBufferSize == 0)
+        return Serial.println("Buffer size is invalid! :(");
+
     if (connected) // check if there is a connection the the mqtt broker
     {
-        published = P_S_CLIENT.publish(topic, payload);
+        published = P_S_CLIENT.publish(topic, (uint8_t *)payload, p_len, is_retaind);
         delay(1000);
         return published;
     }
     else
     {
-        printf("There is no connection with the MQTT Broker!\n");
+        printf("There is no connection with the MQTT Broker! :(\n");
     }
     return published;
 }

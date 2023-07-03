@@ -1,11 +1,18 @@
 
+#ifndef MQTT_Config_H__
+#define MQTT_Config_H__ 
+
+#define MQTT_MAX_BUFFER_SIZE 512
+#define MQTT_PortServer 1883 // MQTT port number
+#define QoS 0                // MQTT quality of service
+
 
  struct MQTT_CONFIG_STRUCT{
 
     MQTT_CONFIG_STRUCT(){
 
-                    WIFI_SSID = "KabelBox-1F28";
-                    WIFI_PASSWORD = "63231894159791231121";
+                    WIFI_SSID = "OpenWrt";
+                    WIFI_PASSWORD = "12345678";
                     wifi_Data[0] = WIFI_SSID;
                     wifi_Data[1] = WIFI_PASSWORD;
                     wifiSetMode = WIFI_STA;
@@ -24,3 +31,6 @@
     uint8_t MAC_Addresse[6];
 
 };    
+
+
+#endif

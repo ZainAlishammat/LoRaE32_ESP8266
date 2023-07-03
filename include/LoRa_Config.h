@@ -1,5 +1,8 @@
  #include <LoRa_E32.h>
 
+#ifndef LoRa_Config_H__
+#define LoRa_Config_H__
+
 
 enum PARAMETER_MODE_POWER_RESET
 {
@@ -62,3 +65,5 @@ enum PARAMETER_MODE_POWER_RESET
     uint8_t GPIO_AUX_LORA; // ESP8266 aux pin
 
 };
+
+#endif
