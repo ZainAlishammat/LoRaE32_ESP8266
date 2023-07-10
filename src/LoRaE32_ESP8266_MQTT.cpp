@@ -16,11 +16,9 @@ void loraPinModeSetup(void)
 
 void loraConfigSet(void)
 {
-    loraPinModeSetup();
     LORA_E32.begin(); // Startup all pins and UART
-
-    MODE_TYPE mode = LORA_E32.getMode();
-    if (mode == MODE_3_SLEEP)
+    lora_Set_Mode();
+    if (loraConfigPin.mode == MODE_3_SLEEP)
     {
         ResponseStructContainer response = LORA_E32.getConfiguration();
         Configuration moduleConfig = *(Configuration *)response.data;                          // Get configuration pointer before all other operation
@@ -50,19 +48,19 @@ void loraConfigSet(void)
       MODE_3_SLEEP
 */
 
-boolean lora_Set_Mode(MODE_TYPE mode)
+boolean lora_Set_Mode()
 {
 
     Status modeStatus;
-    modeStatus = LORA_E32.setMode(mode);
+    modeStatus = LORA_E32.setMode(loraConfigPin.mode);
     if (modeStatus == E32_SUCCESS)
     {
-        printf("The mode %d%s\n", mode, " has been set seccessfully");
+        printf("The mode %d%s\n", loraConfigPin.mode, " has been set seccessfully");
         return true;
     }
     else
     {
-        printf("Isn't able to set the mode %d%s\n", mode, "seccessfully");
+        printf("Not able to set the mode %d%s\n ", loraConfigPin.mode, "seccessfully");
         return false;
     }
 
@@ -71,12 +69,11 @@ boolean lora_Set_Mode(MODE_TYPE mode)
 
 boolean LoRa_sendMsg(const char *msg, const uint8_t size)
 {
-    MODE_TYPE mode = LORA_E32.getMode();
 
-    if (mode != MODE_3_SLEEP || mode != MODE_2_POWER_SAVING)
+    if (loraConfigPin.mode != MODE_3_SLEEP || loraConfigPin.mode != MODE_2_POWER_SAVING)
     {
         ResponseStatus status;
-        status = LORA_E32.sendFixedMessage(loraConfigPar.LORA_E32_ADDH, loraConfigPar.LORA_E32_ADDL, loraConfigPar.LORA_E32_CHAN, (void *)msg, size);
+        status = LORA_E32.sendFixedMessage(loraConfigPar.LORA_E32_ADDH, loraConfigPar.LORA_E32_ADDL, loraConfigPar.LORA_E32_CHAN, msg, size);
         if (status.code == E32_SUCCESS)
         {
             printf("Transmission succeed\n");
@@ -96,20 +93,22 @@ boolean LoRa_sendMsg(const char *msg, const uint8_t size)
     return false;
 }
 
-boolean LoRa_recieveMsg(receivedDataStruct rd)
+boolean LoRa_recieveMsg(LoRaReceivedDataStruct_t rd)
 {
-    MODE_TYPE mode = LORA_E32.getMode();
 
-    if (mode != MODE_3_SLEEP)
+    if (loraConfigPin.mode != MODE_3_SLEEP)
     {
         ResponseStructContainer dataComingContainer;
         dataComingContainer = LORA_E32.receiveMessage(SIZE_RECIEVED_DATA_LORA);
         if (dataComingContainer.status.code == E32_SUCCESS)
         {
             printf("Massage recieved\n");
-            rd.data = &(dataComingContainer.data);
-            memcpy(rd.rc_Data, (char *)dataComingContainer.data, sizeof(rd.rc_Data));
+            // rd.data = (uint8_t *)malloc(SIZE_RECIEVED_DATA_LORA + 1);
+            // rd.data = (uint8_t *)(dataComingContainer.data);
+
+            memcpy(rd.rc_Data, (uint8_t *)dataComingContainer.data, sizeof(rd.rc_Data) / sizeof(rd.rc_Data[0]));
             dataComingContainer.close(); // free allocated memory space by malloc
+            // rd.close();                  // free allocated memory space by malloc
             return true;
         }
     }
