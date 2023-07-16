@@ -15,17 +15,17 @@ enum PARAMETER_MODE_POWER_RESET
   LoRa_E32_Config_Parameter(){
 
                     LORA_E32_HEAD = 0x0;
-                    LORA_E32_ADDH = 0x5;
-                    LORA_E32_ADDL = 0x1;
-                    LORA_E32_CHAN = 0x1;
+                    LORA_E32_ADDH = 0x0;
+                    LORA_E32_ADDL = 0x4;
+                    LORA_E32_CHAN = 0x6;
                     UART_PARITY = 0b00;
                     UAR_BAUD_DATA_RATE= 0b111;
-                    AIR_DATA_RATE= 0b000;
+                    AIR_DATA_RATE= 0b001;
                     FIXED_TRANSMISSION_ENABLING_BIT= 0b1;
                     IO_DRIVE_MODE= 0b1;
-                    WIRELESS_WAKE_UP_TIME= 0b001;
+                    WIRELESS_WAKE_UP_TIME= 0b000;
                     FEC_SWITCH= 0b1;
-                    TRANSISSION_POWER= 0b01;
+                    TRANSISSION_POWER= 0b11;
                     PARAMETER_WITH_POWER_RESET = WRITE_CFG_PWR_DWN_SAVE; // SAVE THE PARAMETERS AFTER RESET
   }
 
@@ -50,14 +50,12 @@ enum PARAMETER_MODE_POWER_RESET
 
       LoRa_E32_Config_Pin()
     {
-        mode = MODE_0_NORMAL;
         LORA_Tx = D8;
         LORA_Rx = D7;
         GPIO_M0_LORA = D1;
         GPIO_M1_LORA = D2;
         GPIO_AUX_LORA = D5;
     }
-    MODE_TYPE mode;
     byte LORA_Tx;       // ESP8266 transmitting pin
     byte LORA_Rx;       // ESP8266 receiving pin
     byte GPIO_M0_LORA;  // ESP8266 m0 pin

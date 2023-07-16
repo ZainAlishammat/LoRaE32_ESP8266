@@ -1,24 +1,26 @@
 #include "LoRaE32_ESP8266_MQTT.h"
 
-// Instances
+// Instances from LoRa_Config.h for setting the module paramters and pins
 LoRa_E32_Config_Parameter loraConfigPar;
 LoRa_E32_Config_Pin loraConfigPin;
+// Instance from SoftwareSerial for opining a UART connection with the lora module
 SoftwareSerial lora_TxRx(loraConfigPin.LORA_Rx, loraConfigPin.LORA_Tx); /* UART Swaping*/
-LoRa_E32 LORA_E32(&lora_TxRx, loraConfigPin.GPIO_AUX_LORA, loraConfigPin.GPIO_M0_LORA, loraConfigPin.GPIO_M1_LORA);
+// Instances of the LoRa_E32 library
+LoRa_E32 LORA_E32(loraConfigPin.LORA_Tx, loraConfigPin.LORA_Rx, loraConfigPin.GPIO_AUX_LORA, loraConfigPin.GPIO_M0_LORA, loraConfigPin.GPIO_M1_LORA);
 
-/*set the pinMode M0, M2 as output and AUX as input*/
-void loraPinModeSetup(void)
-{
-    pinMode(loraConfigPin.GPIO_M0_LORA, OUTPUT);
-    pinMode(loraConfigPin.GPIO_M1_LORA, OUTPUT);
-    pinMode(loraConfigPin.GPIO_AUX_LORA, INPUT);
-}
+/*
+This fucntion must be called at first once for setting the serial wire connection with
+the lora module and setting the required mode
+According to the mode set in the LoRa_Config.h and the parameters for the module
+this function will set these parameters
+Only if the module in the sleep mode this function will set the parameters for the module
 
-void loraConfigSet(void)
+*/
+void loraConfigSet(MODE_TYPE mode)
 {
+    lora_Set_Mode(mode);
     LORA_E32.begin(); // Startup all pins and UART
-    lora_Set_Mode();
-    if (loraConfigPin.mode == MODE_3_SLEEP)
+    if (mode == MODE_3_SLEEP)
     {
         ResponseStructContainer response = LORA_E32.getConfiguration();
         Configuration moduleConfig = *(Configuration *)response.data;                          // Get configuration pointer before all other operation
@@ -32,7 +34,8 @@ void loraConfigSet(void)
         moduleConfig.SPED.uartBaudRate = loraConfigPar.UAR_BAUD_DATA_RATE;                     // UART baudrate at 9600
         moduleConfig.SPED.airDataRate = loraConfigPar.AIR_DATA_RATE;                           // ait data rate at 19,2k pps
         moduleConfig.OPTION.fixedTransmission = loraConfigPar.FIXED_TRANSMISSION_ENABLING_BIT; // fixed transmission mode enable
-        LORA_E32.setConfiguration(moduleConfig, loraConfigPar.PARAMETER_WITH_POWER_RESET);     // save the configuration after module reset
+        moduleConfig.OPTION.fec = loraConfigPar.FEC_SWITCH;
+        LORA_E32.setConfiguration(moduleConfig, loraConfigPar.PARAMETER_WITH_POWER_RESET); // save the configuration after module reset
         Serial.println(response.status.getResponseDescription());
         Serial.println(response.status.code);
         printParameters(moduleConfig); // print module parameters after setting
@@ -40,40 +43,70 @@ void loraConfigSet(void)
     }
 }
 
-/* Configuring the lora_e32 mode over M0 and M2 pin_state
+/*set the pinMode M0, M2 as output and AUX as input*/
+void loraPinModeSetup(void)
+{
+    pinMode(loraConfigPin.GPIO_M0_LORA, OUTPUT);
+    pinMode(loraConfigPin.GPIO_M1_LORA, OUTPUT);
+    pinMode(loraConfigPin.GPIO_AUX_LORA, INPUT);
+}
+
+/*
+Check the state of the AUS, M0 and M1 in order to make sure that
+the sending or receiving data beeing handeld correct
+*/
+void loraPinState()
+{
+    Serial.print("AUX State is -> ");
+    Serial.println(digitalRead(loraConfigPin.GPIO_AUX_LORA));
+    Serial.print("M0 State is -> ");
+    Serial.println(digitalRead(loraConfigPin.GPIO_M0_LORA));
+    Serial.print("M1 State is -> ");
+    Serial.println(digitalRead(loraConfigPin.GPIO_M1_LORA));
+}
+
+/*
+Calling this function will set the mode in the LoRa.Config.h over M0 and M2 pin_state
 
       MODE_0_NORMAL
       MODE_1_WAKE_UP
       MODE_2_POWER_SAVING
       MODE_3_SLEEP
+
+*@return true if the desired mode has been set successfully
 */
-
-boolean lora_Set_Mode()
+Status lora_Set_Mode(MODE_TYPE mode)
 {
-
-    Status modeStatus;
-    modeStatus = LORA_E32.setMode(loraConfigPin.mode);
+    Status modeStatus = LORA_E32.setMode(mode);
     if (modeStatus == E32_SUCCESS)
     {
-        printf("The mode %d%s\n", loraConfigPin.mode, " has been set seccessfully");
-        return true;
+        printf("The mode %d%s\n", mode, " has been set seccessfully");
+        return modeStatus;
     }
     else
     {
-        printf("Not able to set the mode %d%s\n ", loraConfigPin.mode, "seccessfully");
-        return false;
+        printf("Not able to set the mode %d%s\n ", mode, "seccessfully");
+        return modeStatus;
     }
 
-    return false;
+    return modeStatus;
 }
 
-boolean LoRa_sendMsg(const char *msg, const uint8_t size)
+/*
+Sending a string message
+*@param msg: the message to be sent
+*@return true of the message has been sent seccessfully out of the ESP module
+*@return false if the message hasn't been sent successfully out of the module or the module isn't in the correct mode
+*/
+
+boolean loraSendString(const String msg)
 {
 
-    if (loraConfigPin.mode != MODE_3_SLEEP || loraConfigPin.mode != MODE_2_POWER_SAVING)
+    if (LORA_E32.getMode() != MODE_3_SLEEP && LORA_E32.getMode() != MODE_2_POWER_SAVING)
     {
         ResponseStatus status;
-        status = LORA_E32.sendFixedMessage(loraConfigPar.LORA_E32_ADDH, loraConfigPar.LORA_E32_ADDL, loraConfigPar.LORA_E32_CHAN, msg, size);
+        status = LORA_E32.sendFixedMessage(loraConfigPar.LORA_E32_ADDH, loraConfigPar.LORA_E32_ADDL, loraConfigPar.LORA_E32_CHAN, msg);
+
         if (status.code == E32_SUCCESS)
         {
             printf("Transmission succeed\n");
@@ -93,33 +126,73 @@ boolean LoRa_sendMsg(const char *msg, const uint8_t size)
     return false;
 }
 
-boolean LoRa_recieveMsg(LoRaReceivedDataStruct_t rd)
+/*
+Receive a message form the lora modul
+*@param rd; a char array that store the data comming
+*@param size: the number of data in bytes to be stored
+*@return true of the requird data has been all received and stored in the buffer
+*@return false if the module isn't in the correct mode or the received data has been stored
+*/
+
+boolean loraReceiveMsg(char rd[], const uint8_t size)
 {
-
-    if (loraConfigPin.mode != MODE_3_SLEEP)
+    if (LORA_E32.getMode() != MODE_3_SLEEP && size > 0)
     {
-        ResponseStructContainer dataComingContainer;
-        dataComingContainer = LORA_E32.receiveMessage(SIZE_RECIEVED_DATA_LORA);
-        if (dataComingContainer.status.code == E32_SUCCESS)
+        while (LORA_E32.available())
         {
-            printf("Massage recieved\n");
-            // rd.data = (uint8_t *)malloc(SIZE_RECIEVED_DATA_LORA + 1);
-            // rd.data = (uint8_t *)(dataComingContainer.data);
+            ResponseStructContainer dataComingContainer;
+            // dataComingContainer.data = (uint8_t *)dataComingContainer.data;
+            dataComingContainer = LORA_E32.receiveMessage(size);
+            if (dataComingContainer.status.code == E32_SUCCESS)
+            {
+                printf("Massage recieved\n");
+                memcpy(rd, (char *)LORA_E32.receiveMessage(size).data, size);
 
-            memcpy(rd.rc_Data, (uint8_t *)dataComingContainer.data, sizeof(rd.rc_Data) / sizeof(rd.rc_Data[0]));
-            dataComingContainer.close(); // free allocated memory space by malloc
-            // rd.close();                  // free allocated memory space by malloc
-            return true;
+                return true;
+            }
+            else
+            {
+
+                Serial.println("Recieving data encourted with errors");
+                return false;
+            }
         }
     }
     else
     {
-        printf("The modul isn't in the correct mode!\n");
+        Serial.println("The modul isn't in the correct mode!");
         return false;
     }
-    return NULL;
+    return false;
 }
 
+/*
+Receive a message string form the lora modul
+*@return a string of the received data
+
+*/
+String loraReceiveString()
+{
+    ResponseContainer rc;
+
+    if (LORA_E32.getMode() != MODE_3_SLEEP)
+    {
+        rc = LORA_E32.receiveMessage();
+        return rc.data;
+    }
+
+    else
+    {
+        Serial.println("The modul isn't in the correct mode");
+    }
+    return rc.data;
+}
+
+/*
+Print the module configuration and parameters
+It's recommended to use only on the 3 mode (sleep mode)
+*@param configuration: a struct of the configuration to be set
+*/
 void printParameters(struct Configuration configuration)
 {
     Serial.println("----------------------------------------");
