@@ -1,11 +1,8 @@
 #include "MQTT_ESP8266.h"
-#include "MQTT_Config.h"
 
 MQTT_CONFIG_STRUCT mqtt_cs;          // make a configuration instanse for setting wifi and mqtt connection requirements
 WiFiClient ESP_CLIENT;               // set up a WiFiClient instance for wifi conncetion with the broker
 PubSubClient P_S_CLIENT(ESP_CLIENT); // make a PubSubClient instance for mqtt setting
-
-boolean c_ID;
 
 /* MQTT callback function for subscription purposes*/
 void __subCallback(char *topic, byte *payload, unsigned int length)
@@ -63,7 +60,7 @@ void MQTTMakeConnection(void)
 {
     setupWiFi(mqtt_cs.WIFI_SSID, mqtt_cs.WIFI_PASSWORD, mqtt_cs.wifiSetMode);
     P_S_CLIENT.setServer(mqtt_cs.MQTT_IPAddresse, MQTT_PortServer); // set server connection with mqtt broker
-    c_ID = P_S_CLIENT.connect(mqtt_cs.MQTT_CLIENT_ID);              // creat a client id in the mqtt broker
+    P_S_CLIENT.connect(mqtt_cs.MQTT_CLIENT_ID);                     // creat a client id in the mqtt broker
     P_S_CLIENT.setCallback(__subCallback);
     P_S_CLIENT.setBufferSize(MQTT_MAX_PACKET_SIZE); // Set the max size of the buffer for the transceiver
 }
@@ -157,7 +154,7 @@ void MQTT_check(const char *topics[], uint8_t size)
         while (!connected) // stay hanging wihle there is no connection wiht the mqtt broker
         {
             // if there is a connection, check if the client id is accepted
-            if (c_ID)
+            if (P_S_CLIENT.connect(mqtt_cs.MQTT_CLIENT_ID))
             {
 
                 subscribeTopic(topics, size); // subscribe th the topic again
