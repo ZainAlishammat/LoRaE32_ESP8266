@@ -138,6 +138,7 @@ boolean loraReceiveMsg(char rd[], const uint8_t size)
 {
     if (LORA_E32.getMode() != MODE_3_SLEEP && size > 0)
     {
+
         while (LORA_E32.available())
         {
             ResponseStructContainer dataComingContainer;
